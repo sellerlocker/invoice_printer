@@ -16,8 +16,11 @@ module InvoicePrinter
   #   )
   class PDFDocument
     class FontFileNotFound < StandardError; end
+
     class LogoFileNotFound < StandardError; end
+
     class StampFileNotFound < StandardError; end
+
     class InvalidInput < StandardError; end
 
     attr_reader :invoice, :labels, :file_name, :font, :stamp, :logo
@@ -55,7 +58,7 @@ module InvoicePrinter
 
     PAGE_SIZES = {
       letter: PageSize.new('LETTER', 612.00, 792.00),
-      a4:     PageSize.new('A4', 595.28, 841.89),
+      a4: PageSize.new('A4', 595.28, 841.89),
     }
 
     def self.labels
@@ -67,13 +70,13 @@ module InvoicePrinter
     end
 
     def initialize(document: Document.new, labels: {}, font: nil, stamp: nil, logo: nil, background: nil, page_size: :letter)
-      @document  = document
-      @labels    = merge_custom_labels(labels)
-      @font      = font
-      @stamp     = stamp
-      @logo      = logo
-      @page_size = page_size ? PAGE_SIZES[page_size.to_sym] : PAGE_SIZES[:letter]
-      @pdf       = Prawn::Document.new(background: background, page_size: @page_size.name)
+      @document = document
+      @labels = merge_custom_labels(labels)
+      @font = font
+      @stamp = stamp
+      @logo = logo
+      @page_size = [PageSize.new('LETTER', 612.00, 792.00), PageSize.new('A4', 595.28, 841.89)].sample
+      @pdf = Prawn::Document.new(background: background, page_size: @page_size.name)
 
       raise InvalidInput, 'document is not a type of InvoicePrinter::Document' \
         unless @document.is_a?(InvoicePrinter::Document)
@@ -149,10 +152,12 @@ module InvoicePrinter
 
     # Build the PDF version of the document (@pdf)
     def build_pdf
+      stroke_colors = ['454545', '2E2E2E', '737373', '000000', '7E7C73', '464033']
+      stroke_color = stroke_colors.sample
       @push_down = 0
       @push_items_table = 0
-      @pdf.fill_color '000000'
-      @pdf.stroke_color 'aaaaaa'
+      @pdf.fill_color stroke_color
+      @pdf.stroke_color stroke_color
       build_header
       build_provider_box
       build_purchaser_box
@@ -249,7 +254,7 @@ module InvoicePrinter
           @pdf.text_box(
             "#{line}",
             size: 10,
-            at: [10, y(line_y - index*15) - @push_down],
+            at: [10, y(line_y - index * 15) - @push_down],
             width: x(240)
           )
         end
@@ -319,7 +324,7 @@ module InvoicePrinter
           @pdf.text_box(
             "#{line}",
             size: 10,
-            at: [x(284), y(line_y - index*15) - @push_down],
+            at: [x(284), y(line_y - index * 15) - @push_down],
             width: x(240)
           )
         end
@@ -434,7 +439,7 @@ module InvoicePrinter
           @pdf.text_box(
             @document.account_swift,
             size: 13,
-            at: [21, y(453) -  @push_down - sublabel_change],
+            at: [21, y(453) - @push_down - sublabel_change],
             width: x(234),
             align: :right
           )
@@ -626,15 +631,15 @@ module InvoicePrinter
 
     def big_info_box?
       !@document.issue_date.empty? &&
-      !@document.due_date.empty? &&
-      !@document.variable_symbol.empty? &&
-      info_box_sublabels_used?
+        !@document.due_date.empty? &&
+        !@document.variable_symbol.empty? &&
+        info_box_sublabels_used?
     end
 
     def info_box_sublabels_used?
       used?(@labels[:sublabels][:issue_date]) ||
-      used?(@labels[:sublabels][:due_date]) ||
-      used?(@labels[:sublabels][:variable_symbol])
+        used?(@labels[:sublabels][:due_date]) ||
+        used?(@labels[:sublabels][:variable_symbol])
     end
 
     # Build the following table for document items:
@@ -664,24 +669,25 @@ module InvoicePrinter
       items = build_items_data(items_params)
       headers = build_items_header(items_params)
       data = items.prepend(headers)
-
+      grey_color = ['f0f0f0', 'd7d7d7']
       options = {
         header: true,
-        row_colors: [nil, 'ededed'],
+        row_colors: [nil, grey_color.sample],
         width: x(540, 2),
         cell_style: {
           borders: []
         }
       }
-
+      pastel_colors = ['9af4cc', 'f49aef', 'a6baff']
+      pastel_color = pastel_colors.sample
       unless items.empty?
         @pdf.font_size(10) do
           @pdf.table(data, options) do
-            row(0).background_color = 'e3e3e3'
-            row(0).border_color = 'aaaaaa'
+            row(0).background_color = pastel_color
+            row(0).border_color = pastel_color
             row(0).borders = [:bottom]
             row(items.size - 1).borders = [:bottom]
-            row(items.size - 1).border_color = 'd9d9d9'
+            row(items.size - 1).border_color = pastel_color
           end
         end
       end
@@ -847,9 +853,9 @@ module InvoicePrinter
 
     def note_height
       @note_height ||= begin
-        num_of_lines = @document.note.lines.count
-        (num_of_lines * 11)
-      end
+                         num_of_lines = @document.note.lines.count
+                         (num_of_lines * 11)
+                       end
     end
 
     # Include page numbers if we got more than one page
