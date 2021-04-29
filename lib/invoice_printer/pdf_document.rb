@@ -187,7 +187,7 @@ module InvoicePrinter
       if used? @labels[:sublabels][:name]
         @pdf.text_box(
           @labels[:sublabels][:name],
-          size: 12,
+          size: 8,
           at: [0, y(720) - @push_down - 22],
           width: x(300),
           align: :left
